@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PR goal map</title>
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --ink:#1d1d1b; --ink2:#5b5b57; --ink3:#8a8a84; --line:#e3e2dd; --line2:#cfcdc6;
+  --accent:#2f6fde; --accent-t:rgba(47,111,222,.10);
+  --ok:#1f8a4c; --ok-t:rgba(31,138,76,.11); --warn:#b7791f; --warn-t:rgba(183,121,31,.13);
+  --div:#8b4bd1; --div-t:rgba(139,75,209,.12); --def:#7a7a74; --def-t:rgba(122,122,116,.10); --bad:#c53030;
+  --code-bg:#f3f2ee; --add:#1f8a4c; --edge:#b9b7ae;
+  --c1:#2f6fde; --c2:#d0632a; --c3:#1f8a74; --c4:#8b4bd1; --c5:#ca8a04; --c6:#b83280; --c7:#0e7490; --c8:#6b7a1f; --c9:#78716c; --cx:#c53030;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#161615; --panel:#1f1f1d; --ink:#ecebe6; --ink2:#b1b0a9; --ink3:#86857e; --line:#302f2c; --line2:#44433f;
+    --accent:#6b9cf0; --accent-t:rgba(107,156,240,.14);
+    --ok:#4cc27f; --ok-t:rgba(76,194,127,.13); --warn:#e0a547; --warn-t:rgba(224,165,71,.14);
+    --div:#b48af0; --div-t:rgba(180,138,240,.14); --def:#9c9b94; --def-t:rgba(156,155,148,.12); --bad:#f07070;
+    --code-bg:#262624; --add:#4cc27f; --edge:#55544f;
+    --c1:#6b9cf0; --c2:#f08a52; --c3:#4cc2a4; --c4:#b48af0; --c5:#eab308; --c6:#e879b9; --c7:#4fb8d4; --c8:#b5c94a; --c9:#a8a29e; --cx:#f07070;
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#161615; --panel:#1f1f1d; --ink:#ecebe6; --ink2:#b1b0a9; --ink3:#86857e; --line:#302f2c; --line2:#44433f;
+    --accent:#6b9cf0; --accent-t:rgba(107,156,240,.14);
+    --ok:#4cc27f; --ok-t:rgba(76,194,127,.13); --warn:#e0a547; --warn-t:rgba(224,165,71,.14);
+    --div:#b48af0; --div-t:rgba(180,138,240,.14); --def:#9c9b94; --def-t:rgba(156,155,148,.12); --bad:#f07070;
+    --code-bg:#262624; --add:#4cc27f; --edge:#55544f;
+    --c1:#6b9cf0; --c2:#f08a52; --c3:#4cc2a4; --c4:#b48af0; --c5:#eab308; --c6:#e879b9; --c7:#4fb8d4; --c8:#b5c94a; --c9:#a8a29e; --cx:#f07070;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+a{color:var(--accent);text-decoration:none}
+header{padding:18px 24px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.eyebrow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+h1{font-size:19px;margin:4px 0 6px;font-weight:650}
+.meta{color:var(--ink2);display:flex;flex-wrap:wrap;gap:6px 16px}
+.meta b{color:var(--ink);font-weight:600}
+.add{color:var(--add)} .del{color:var(--bad)}
+.summary{margin:12px 0 0;max-width:980px;color:var(--ink)}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:flex;gap:8px;align-items:center;background:var(--bg);cursor:pointer}
+.stat .n{font-weight:650;font-size:15px}
+.stat.active{outline:2px solid var(--accent)}
+nav{display:flex;gap:4px;padding:0 24px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;align-items:center}
+nav button{border:0;background:none;color:var(--ink2);padding:10px 12px;font:inherit;cursor:pointer;border-bottom:2px solid transparent}
+nav button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+nav .spacer{flex:1}
+nav .hint{color:var(--ink3);font-size:12px}
+.tourbtn{border:1px solid var(--line2)!important;border-radius:6px;padding:5px 10px!important;margin-left:8px;color:var(--ink)!important}
+main{padding:16px 24px 80px}
+.view{display:none}.view.on{display:block}
+
+/* map */
+#map{position:relative;display:grid;grid-template-columns:minmax(170px,210px) minmax(300px,1.35fr) minmax(250px,1fr) minmax(220px,270px);column-gap:64px;min-width:1120px}
+#mapwrap{overflow-x:auto}
+#edges{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.colhead{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:0 0 8px;display:flex;justify-content:space-between}
+.col{display:flex;flex-direction:column;gap:8px;position:relative;z-index:1}
+.node{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;transition:opacity .15s,border-color .15s,box-shadow .15s}
+.node:hover{border-color:var(--line2)}
+.node.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-t)}
+.dim .node:not(.lit){opacity:.28}
+.dim .goal:not(.lit)>.goalhead{opacity:.35}
+.src .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}
+.src .t{font-weight:600;margin-top:1px}
+.src .s{color:var(--ink2);font-size:12px}
+.tag{display:inline-block;font-size:10.5px;padding:0 6px;border-radius:9px;border:1px solid var(--line2);color:var(--ink2);margin-left:4px;vertical-align:1px}
+.tag.inpr{border-color:var(--accent);color:var(--accent)}
+.goal{border:1px solid var(--line);border-radius:10px;padding:8px;background:transparent}
+.goalhead{padding:2px 4px 8px;cursor:pointer}
+.goalhead .gid{color:var(--ink3);font-size:11px;font-weight:600;margin-right:6px}
+.goalhead .gt{font-weight:650}
+.goalhead .gs{color:var(--ink2);font-size:12px;margin-top:2px}
+.goal .col{gap:6px}
+.req{padding:6px 8px 6px 10px;display:flex;gap:8px;align-items:flex-start}
+.req .rid{font-size:11px;color:var(--ink3);font-weight:600;min-width:24px;padding-top:1px}
+.req .rt{flex:1}
+.req.deferred,.req.partial{border-style:dashed}
+.req.deferred{background:transparent}
+.badge{font-size:10.5px;font-weight:600;border-radius:9px;padding:1px 7px;white-space:nowrap}
+.b-covered{color:var(--ok);background:var(--ok-t)}
+.b-partial{color:var(--warn);background:var(--warn-t)}
+.b-deferred{color:var(--def);background:var(--def-t)}
+.b-diverged{color:var(--div);background:var(--div-t)}
+.b-missing{color:var(--bad);background:rgba(197,48,48,.1)}
+.set{border-left:4px solid var(--cs)}
+.set .st{font-weight:650;display:flex;gap:6px;align-items:baseline}
+.set .ord{font-size:11px;color:var(--ink3);font-weight:600}
+.set .sw{color:var(--ink2);font-size:12px;margin-top:2px}
+.set .sm{display:flex;gap:10px;margin-top:5px;font-size:11.5px;color:var(--ink3)}
+.set.reviewed .st::after{content:"✓ reviewed";font-size:10.5px;color:var(--ok);font-weight:600;margin-left:auto}
+.set.unexplained{border-left-style:dashed;background:transparent}
+.fgroup{font-size:11px;color:var(--ink3);margin:6px 0 -2px 2px}
+.file{padding:4px 8px;display:flex;align-items:center;gap:6px}
+.file .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file .bar{height:6px;border-radius:3px;background:var(--add);opacity:.55}
+.file .ln{font-size:11px;color:var(--ink3);min-width:34px;text-align:right}
+.ft{font-size:9.5px;border-radius:4px;padding:0 4px;border:1px solid var(--line2);color:var(--ink3)}
+.edge{fill:none;stroke:var(--edge);transition:opacity .15s}
+.dim .edge{opacity:.12}
+.dim .edge.lit{opacity:1}
+.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--ink2);font-size:12px;margin:0 0 14px}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.sw-line{width:22px;height:0;border-top:2px solid var(--edge)}
+.sw-dash{border-top-style:dashed}
+
+/* drawer */
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.08);transform:translateX(100%);transition:transform .18s;z-index:20;display:flex;flex-direction:column}
+#drawer.open{transform:none}
+/* keep the map beside an open drawer, not under it, so the Files column stays reachable */
+@media (min-width:900px){body.drawer-open main,body.drawer-open nav{padding-right:calc(24px + min(480px,100vw))}}
+#selbar{display:flex;gap:6px;margin-right:12px}
+#selbar[hidden],#selbar button[hidden]{display:none}
+#selbar button{border:1px solid var(--line2);border-radius:6px;padding:4px 10px;color:var(--ink)}
+#drawer .dh{padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+#drawer .db{padding:14px 18px 40px;overflow:auto;flex:1}
+#drawer .x{position:absolute;right:12px;top:10px;border:0;background:none;font-size:20px;color:var(--ink3);cursor:pointer}
+#drawer h2{font-size:16px;margin:2px 0 4px}
+#drawer h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:18px 0 6px}
+.quote{border-left:3px solid var(--line2);padding:4px 10px;margin:6px 0;color:var(--ink);background:var(--bg);border-radius:0 6px 6px 0}
+.quote .qs{display:block;font-size:11px;color:var(--ink3);margin-top:3px}
+.q-issue{border-left-color:var(--warn)} .q-spec{border-left-color:var(--accent)} .q-adr{border-left-color:var(--div)} .q-commit{border-left-color:var(--ink3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line2);border-radius:12px;padding:2px 8px;font-size:12px;cursor:pointer;background:var(--panel)}
+.chip:hover{border-color:var(--accent)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cs);margin-right:5px;vertical-align:0}
+pre.code{background:var(--code-bg);border-radius:6px;padding:8px 0;overflow:auto;margin:6px 0 10px}
+pre.code .l{display:block;padding:0 10px;white-space:pre}
+pre.code .l.a{background:rgba(31,138,76,.10)}
+pre.code .l.r{background:rgba(197,48,48,.09)}
+pre.code .l.c{color:var(--ink3)}
+.codehead{font-size:11.5px;color:var(--ink2);margin-top:8px}
+ul.tests{list-style:none;padding:0;margin:0}
+ul.tests li{padding:3px 0;border-bottom:1px dashed var(--line);font-family:ui-monospace,Menlo,monospace;font-size:11.5px;display:flex;gap:6px}
+ul.tests li .kind{color:var(--ink3);min-width:78px;flex:none}
+ul.tests li .tn{word-break:break-all;flex:1}
+ul.tests li .rq{color:var(--ink3);flex:none;margin-left:auto;padding-left:6px}
+ul.commits{list-style:none;padding:0;margin:0}
+ul.commits li{padding:3px 0;display:flex;gap:8px;font-size:12px}
+ul.commits .h{font-family:ui-monospace,Menlo,monospace;color:var(--ink3)}
+.note{background:var(--div-t);border-radius:6px;padding:8px 10px;margin:8px 0}
+.note.def{background:var(--def-t)} .note.warn{background:var(--warn-t)}
+.tourbar{display:flex;gap:8px;align-items:center;margin-top:10px}
+.tourbar button{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:6px;padding:4px 10px;font:inherit;cursor:pointer}
+.tourbar label{margin-left:auto;display:flex;gap:6px;align-items:center;cursor:pointer}
+
+/* coverage */
+table.cov{border-collapse:collapse;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.cov th,.cov td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.cov th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:600;background:var(--bg)}
+.cov tr.gh td{background:var(--bg);font-weight:650;color:var(--ink)}
+.cov tr.r{cursor:pointer} .cov tr.r:hover td{background:var(--accent-t)}
+.cov .num{font-variant-numeric:tabular-nums;text-align:center}
+.cov .miss{color:var(--ink3)}
+.covnote{color:var(--ink2);margin:0 0 12px;max-width:900px}
+
+/* timeline */
+#tl{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}
+#tl svg{display:block;min-width:1000px;width:100%}
+.tl-dot{cursor:pointer}
+.tl-dot:hover{stroke:var(--ink);stroke-width:2}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 8px;border-radius:6px;font-size:12px;max-width:360px;z-index:30;display:none}
+.decisions{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:14px}
+.dec{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer}
+.dec .dd{font-size:11px;color:var(--ink3)}
+.dec .dt{font-weight:650;margin:2px 0}
+.dec .dx{color:var(--ink2);font-size:12px}
+.mock{font-size:11.5px;color:var(--ink3);margin-top:8px}
+details.hunk{border:1px solid var(--line);border-radius:6px;margin:6px 0;padding:6px 8px;background:var(--panel)}
+details.hunk summary{cursor:pointer;list-style:none;font-size:12px}
+details.hunk summary::-webkit-details-marker{display:none}
+details.hunk .hh{color:var(--ink3);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+details.hunk .hn{margin-top:3px;color:var(--ink)}
+details.hunk pre.code{max-height:360px}
+@media (max-width:760px){header,main,nav{padding-left:16px;padding-right:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">PR goal map</div>
+  <h1 id="title"></h1>
+  <div class="meta" id="meta"></div>
+  <p class="summary" id="summary"></p>
+  <div class="stats" id="stats"></div>
+  <div id="notes"></div>
+</header>
+<nav>
+  <button data-v="map" class="on">Goal map</button>
+  <button data-v="cov">Coverage</button>
+  <button data-v="tl">Timeline &amp; decisions</button>
+  <button class="tourbtn" id="tourStart">Start tour ▸</button>
+  <span class="spacer"></span>
+  <span id="selbar" hidden><button id="selDetails" title="Reopen the details panel for the traced card">Details</button><button id="selClear" title="Clear the trace (Esc)">Clear</button></span>
+  <span class="hint">Click any card to trace it · Esc closes details, then clears · J/K in tour</span>
+</nav>
+<main>
+  <section class="view on" id="v-map">
+    <div class="legend">
+      <span><span class="sw-line"></span> states / implements / touches</span>
+      <span><span class="sw-line sw-dash"></span> supporting</span>
+      <span><span class="badge b-covered">covered</span> implemented and tested</span>
+      <span><span class="badge b-diverged">diverged</span> built differently, on purpose</span>
+      <span><span class="badge b-partial">partial</span></span>
+      <span><span class="badge b-deferred">deferred</span> explicitly left for later</span>
+      <span>Link width in the right half follows lines changed</span>
+    </div>
+    <div id="mapwrap">
+      <div id="map">
+        <svg id="edges"></svg>
+        <div><div class="colhead"><span>Where intent is stated</span></div><div class="col" id="c-src"></div></div>
+        <div><div class="colhead"><span>Goals → requirements</span></div><div class="col" id="c-req"></div></div>
+        <div><div class="colhead"><span>Change sets, in reading order</span></div><div class="col" id="c-set"></div></div>
+        <div><div class="colhead"><span>Files</span><span>+lines</span></div><div class="col" id="c-file"></div></div>
+      </div>
+    </div>
+  </section>
+  <section class="view" id="v-cov">
+    <p class="covnote">Every requirement the goal pass found, with what implements it, what proves it, and where it is written down. Rows with no tests or no implementing change set are the ones to question in review.</p>
+    <table class="cov" id="covtable"></table>
+  </section>
+  <section class="view" id="v-tl">
+    <p class="covnote">Branch commits by the change sets they touched. Idle days are compressed. Diamonds mark decisions pass E found: a doc change that redirected the code, a rename, a change that was undone before merge.</p>
+    <div id="tl"></div>
+    <div class="decisions" id="declist"></div>
+  </section>
+</main>
+<aside id="drawer"><button class="x" id="dx" aria-label="Close">×</button><div class="dh" id="dh"></div><div class="db" id="db"></div></aside>
+<div class="tip" id="tip"></div>
+
+<script>
+const D = __GOALMAP_DATA__;
+const META = D.meta, SRC = D.sources, GOALS = D.goals, REQ = D.reqs, FILES = D.files, SETS = D.sets, COMMITS = D.commits, DECISIONS = D.decisions;
+const HUNKM = Object.fromEntries(SETS.flatMap(s => s.hunks.map(h => [h.id, Object.assign({set: s.id}, h)])));
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SETM = Object.fromEntries(SETS.map(s => [s.id, s]));
+const FILEM = Object.fromEntries(FILES.map(f => [f.id, f]));
+const SRCM = Object.fromEntries(SRC.map(s => [s.id, s]));
+const COMM = Object.fromEntries(COMMITS.map(c => [c[0], c]));
+const goalOf = r => GOALS.find(g => g.reqs.includes(r));
+const wall = iso => Date.parse(String(iso).slice(0, 19) + 'Z');
+const fmtDay = iso => { const d = new Date(wall(iso)); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()] + ' ' + d.getUTCDate(); };
+const badge = st => `<span class="badge b-${st}">${st}</span>`;
+const srcLabel = id => id.startsWith('commit:') ? 'commit ' + id.slice(7, 14) : (SRCM[id] ? SRCM[id].kind + ' · ' + SRCM[id].title : id);
+const qClass = id => { if (id.startsWith('commit:')) return 'q-commit'; const k = (SRCM[id] || {}).kind || ''; return /issue/i.test(k) ? 'q-issue' : /adr/i.test(k) ? 'q-adr' : 'q-spec'; };
+const quoteHTML = q => `<div class="quote ${qClass(q.source)}">“${esc(q.quote)}”<span class="qs">${esc(srcLabel(q.source))}${q.anchor ? ' · ' + esc(q.anchor) : ''}</span></div>`;
+
+/* ---------- edges ---------- */
+const EDGES = [];
+Object.entries(REQ).forEach(([rid, r]) => r.cites.forEach(q => { if (SRCM[q.source]) EDGES.push({f:q.source, t:rid, k:'cite'}); }));
+SETS.forEach(s => {
+  s.serves.forEach(([rid, str]) => EDGES.push({f:rid, t:s.id, k:str === 'p' ? 'serve' : 'support'}));
+  s.files.forEach(fid => { const f = FILEM[fid]; const share = SETS.filter(x => x.files.includes(fid)).length; EDGES.push({f:s.id, t:fid, k:'touch', w:(s.fw && s.fw[fid]) || (f.a + f.d) / share, cs:s.c}); });
+});
+// deferred / partial reqs with no implementing set still cite; that absence is the signal
+
+/* ---------- header ---------- */
+const counts = {covered:0, partial:0, deferred:0, diverged:0, missing:0};
+Object.values(REQ).forEach(r => counts[r.st]++);
+document.title = 'Goal map · ' + (META.number ? '#' + META.number : META.title);
+$('#title').innerHTML = esc(META.title) + (META.number ? ` <span style="color:var(--ink3);font-weight:500">#${META.number}</span>` : '');
+$('#meta').innerHTML = [META.url ? `<a href="${esc(META.url)}" target="_blank" rel="noopener">${esc(META.repo)}</a>` : esc(META.repo),
+  `<span><b>${META.fileCount}</b> files</span>`, `<span class="add">+${META.additions.toLocaleString()}</span><span class="del">−${META.deletions.toLocaleString()}</span>`,
+  `<span><b>${META.commitCount}</b> commits${META.dateRange ? ', ' + fmtDay(META.dateRange[0]) + ' – ' + fmtDay(META.dateRange[1]) : ''}</span>`,
+  `<span>${esc((META.authors || []).join(', '))}</span>`, `<span class="mono">${esc(META.base)}..${esc(META.head)}</span>`].join('');
+const reqN = Object.keys(REQ).length, provenN = Object.keys(REQ).filter(r => SETS.some(s => s.tests.some(t => t.r.includes(r)))).length;
+$('#summary').innerHTML = META.summary ? esc(META.summary) : `${counts.covered} of ${reqN} requirements covered; ${provenN} named by a test.`;
+(META.notes || []).forEach(n => $('#notes').appendChild(el('div', 'mock', '⚠ ' + esc(n))));
+$('#notes').appendChild(el('div', 'mock', `Generated ${esc(META.generatedAt || '')} by the pr-goal-map skill. Every claim links to a quote, hunk or commit; check the ones that matter before relying on them.`));
+const statDefs = [['covered','covered'],['diverged','diverged'],['partial','partial'],['deferred','deferred'],['missing','missing'],['unexplained','unexplained']];
+statDefs.forEach(([k, label]) => {
+  const n = k === 'unexplained' ? SETS.filter(s => s.unexplained).length : counts[k];
+  const b = el('div', 'stat', `<span class="n">${n}</span>${k === 'unexplained' ? '<span>unexplained change set</span>' : badge(label)}`);
+  b.onclick = () => { showView('map'); const ids = k === 'unexplained' ? SETS.filter(s => s.unexplained).map(s => s.id) : Object.keys(REQ).filter(r => REQ[r].st === k); highlight(ids, null); };
+  if (n || k === 'covered') $('#stats').appendChild(b);
+});
+
+/* ---------- map ---------- */
+const nodeEls = {};
+SRC.forEach(s => {
+  const n = el('div', 'node src', `<div class="k">${esc(s.kind)}${s.inPR ? '<span class="tag inpr">in PR</span>' : '<span class="tag">prior</span>'}</div><div class="t">${esc(s.title)}</div><div class="s">${esc(s.sub)}</div>`);
+  n.dataset.id = s.id; $('#c-src').appendChild(n); nodeEls[s.id] = n;
+});
+GOALS.forEach(g => {
+  const box = el('div', 'goal'); box.dataset.goal = g.id;
+  const h = el('div', 'goalhead', `<span class="gid">${g.id}</span><span class="gt">${esc(g.title)}</span><div class="gs">${esc(g.sum)}</div>`);
+  h.onclick = e => { e.stopPropagation(); select(g.id); };
+  box.appendChild(h); nodeEls[g.id] = box;
+  const col = el('div', 'col');
+  g.reqs.forEach(rid => {
+    const r = REQ[rid];
+    const n = el('div', `node req ${r.st}`, `<span class="rid">${rid}</span><span class="rt">${esc(r.t)}</span>${badge(r.st)}`);
+    n.dataset.id = rid; col.appendChild(n); nodeEls[rid] = n;
+  });
+  box.appendChild(col); $('#c-req').appendChild(box);
+});
+SETS.forEach((s, i) => {
+  const tests = s.tests.length, lines = s.files.reduce((a, fid) => a + ((s.fw && s.fw[fid]) || (FILEM[fid].a + FILEM[fid].d) / SETS.filter(x => x.files.includes(fid)).length), 0);
+  const n = el('div', `node set${s.unexplained ? ' unexplained' : ''}`, `<div class="st"><span class="ord">${s.unexplained ? '—' : i + 1}</span>${esc(s.title)}</div><div class="sw">${esc(s.w)}</div><div class="sm"><span>${s.files.length} files</span><span>~${Math.round(lines)} lines</span><span>${tests} tests</span><span>${s.commits.length} commits</span></div>`);
+  n.style.setProperty('--cs', `var(${s.c})`); n.dataset.id = s.id; $('#c-set').appendChild(n); nodeEls[s.id] = n;
+});
+const maxLines = Math.max(...FILES.map(f => f.a + f.d));
+let lastG = '';
+FILES.forEach(f => {
+  if (f.g !== lastG) { $('#c-file').appendChild(el('div', 'fgroup', esc(f.g))); lastG = f.g; }
+  const n = el('div', 'node file', `<span class="fn mono" title="${esc(f.p)}">${esc(f.n)}</span>${f.t ? `<span class="ft">${f.t}</span>` : ''}<span class="bar" style="width:${Math.max(3, 44 * (f.a + f.d) / maxLines)}px"></span><span class="ln">+${f.a}</span>`);
+  n.dataset.id = f.id; $('#c-file').appendChild(n); nodeEls[f.id] = n;
+});
+
+function drawEdges() {
+  const svg = $('#edges'), map = $('#map'), mr = map.getBoundingClientRect();
+  svg.setAttribute('width', map.scrollWidth); svg.setAttribute('height', map.scrollHeight);
+  svg.innerHTML = '';
+  EDGES.forEach(e => {
+    const a = nodeEls[e.f], b = nodeEls[e.t]; if (!a || !b) return;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const x1 = ra.right - mr.left, y1 = ra.top + ra.height / 2 - mr.top, x2 = rb.left - mr.left, y2 = rb.top + rb.height / 2 - mr.top;
+    const dx = (x2 - x1) * .5;
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`);
+    p.setAttribute('class', 'edge');
+    let w = 1.2;
+    if (e.k === 'serve') w = 2.4;
+    if (e.k === 'support') { w = 1.2; p.setAttribute('stroke-dasharray', '4 4'); }
+    if (e.k === 'touch') { w = Math.max(1, Math.min(9, Math.sqrt(e.w) / 2.4)); p.style.stroke = `var(${e.cs})`; p.style.strokeOpacity = .45; }
+    p.setAttribute('stroke-width', w);
+    p.dataset.f = e.f; p.dataset.t = e.t;
+    svg.appendChild(p);
+  });
+  applyLit();
+}
+
+/* ---------- selection ---------- */
+let lit = null, selected = null;
+function traceFrom(ids) {
+  const set = new Set(ids);
+  const down = [...ids], up = [...ids];
+  while (down.length) { const x = down.pop(); EDGES.forEach(e => { if (e.f === x && !set.has(e.t)) { set.add(e.t); down.push(e.t); } }); }
+  const upSeen = new Set(ids);
+  while (up.length) { const x = up.pop(); EDGES.forEach(e => { if (e.t === x && !upSeen.has(e.f)) { upSeen.add(e.f); set.add(e.f); up.push(e.f); } }); }
+  return set;
+}
+function applyLit() {
+  const map = $('#map');
+  document.querySelectorAll('.node.lit,.goal.lit,.edge.lit,.node.sel').forEach(n => n.classList.remove('lit', 'sel'));
+  if (!lit) { map.classList.remove('dim'); return; }
+  map.classList.add('dim');
+  lit.forEach(id => { const n = nodeEls[id]; if (n) n.classList.add('lit'); });
+  GOALS.forEach(g => { if (lit.has(g.id) || g.reqs.some(r => lit.has(r))) nodeEls[g.id].classList.add('lit'); });
+  document.querySelectorAll('.edge').forEach(p => { if (lit.has(p.dataset.f) && lit.has(p.dataset.t)) p.classList.add('lit'); });
+  if (selected && nodeEls[selected] && nodeEls[selected].classList.contains('node')) nodeEls[selected].classList.add('sel');
+  syncSelBar();
+}
+// Closing the drawer keeps the trace; clearing the trace closes the drawer.
+function setDrawer(open) {
+  $('#drawer').classList.toggle('open', open);
+  document.body.classList.toggle('drawer-open', open);
+  syncSelBar();
+  requestAnimationFrame(drawEdges);
+}
+function syncSelBar() {
+  $('#selbar').hidden = !selected;
+  $('#selDetails').hidden = $('#drawer').classList.contains('open');
+}
+function highlight(ids, sel) {
+  const start = [];
+  ids.forEach(id => { const g = GOALS.find(x => x.id === id); if (g) start.push(...g.reqs); else start.push(id); });
+  lit = traceFrom(start); ids.forEach(i => lit.add(i)); selected = sel; applyLit();
+}
+function select(id) { highlight([id], id); openDrawer(id); }
+function clearSel() { lit = null; selected = null; applyLit(); setDrawer(false); tour = -1; }
+document.querySelectorAll('#map .node').forEach(n => n.addEventListener('click', e => { e.stopPropagation(); select(n.dataset.id); }));
+$('#map').addEventListener('click', e => { if (e.target.id === 'map' || e.target.closest('.colhead')) clearSel(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if ($('#drawer').classList.contains('open')) setDrawer(false); else clearSel(); }
+  if (tour >= 0 && (e.key === 'j' || e.key === 'ArrowDown')) stepTour(1);
+  if (tour >= 0 && (e.key === 'k' || e.key === 'ArrowUp')) stepTour(-1);
+});
+
+/* ---------- drawer ---------- */
+const reviewed = new Set();
+let tour = -1;
+function chip(id) {
+  if (REQ[id]) return `<span class="chip" data-go="${id}">${id} ${badge(REQ[id].st)}</span>`;
+  if (SETM[id]) return `<span class="chip" data-go="${id}"><span class="dot" style="--cs:var(${SETM[id].c})"></span>${esc(SETM[id].title)}</span>`;
+  if (FILEM[id]) return `<span class="chip mono" data-go="${id}">${esc(FILEM[id].n)}</span>`;
+  if (SRCM[id]) return `<span class="chip" data-go="${id}">${esc(SRCM[id].kind)} · ${esc(SRCM[id].title)}</span>`;
+  return '';
+}
+function hunkHTML(h) {
+  const f = FILEM[h.file] || {};
+  const body = (h.text || []).map(l => `<span class="l ${l[0] === '+' ? 'a' : l[0] === '-' ? 'r' : ''}">${esc(l)}</span>`).join('');
+  return `<details class="hunk"><summary><span class="mono">${h.id}</span> <span class="mono">${esc(f.n || '')}</span> <span class="add">+${h.add}</span> <span class="del">−${h.del}</span>${h.role ? ` <span class="ft">${esc(h.role)}</span>` : ''}<div class="hh mono">${esc(h.header || '')}</div>${h.note ? `<div class="hn">${esc(h.note)}</div>` : ''}</summary><pre class="code">${body}${h.truncated ? '<span class="l c">… truncated</span>' : ''}</pre></details>`;
+}
+function commitList(hs) { return `<ul class="commits">${hs.map(h => { const c = COMM[h]; return c ? `<li><span class="h">${h}</span><span style="color:var(--ink3)">${c[1].slice(5, 10)}</span><span>${esc(c[3])}</span></li>` : ''; }).join('')}</ul>`; }
+function openDrawer(id) {
+  const dh = $('#dh'), db = $('#db'); let h = '', b = '';
+  if (SETM[id]) {
+    const s = SETM[id], i = SETS.indexOf(s);
+    h = `<div class="eyebrow">${s.unexplained ? 'Unexplained change' : 'Change set ' + (i + 1) + ' of ' + SETS.filter(x => !x.unexplained).length}</div><h2><span class="dot" style="--cs:var(${s.c})"></span>${esc(s.title)}</h2>`;
+    if (tour >= 0) h += `<div class="tourbar"><button id="tp">◂ Prev (K)</button><button id="tn">Next (J) ▸</button><label><input type="checkbox" id="rv" ${reviewed.has(s.id) ? 'checked' : ''}> Reviewed</label></div>`;
+    b += `<p>${esc(s.why)}</p>${quoteHTML(s.quote)}`;
+    if (s.serves.length) b += `<h3>Serves</h3><div class="chips">${s.serves.map(([r, k]) => chip(r) + (k === 's' ? '' : '')).join('')}</div><div class="mock">Primary: ${s.serves.filter(x => x[1] === 'p').map(x => x[0]).join(', ') || '—'} · supporting: ${s.serves.filter(x => x[1] === 's').map(x => x[0]).join(', ') || '—'}</div>`;
+    if (s.code.length) b += `<h3>Key lines</h3>` + s.code.map(c => `<div class="codehead mono">${esc(c.h)}</div><pre class="code">${c.l.map(([k, t]) => `<span class="l ${k}">${k === 'a' ? '+' : k === 'r' ? '−' : ' '} ${esc(t)}</span>`).join('')}</pre>`).join('');
+    b += `<h3>Proven by ${s.tests.length ? '(' + s.tests.length + ')' : ''}</h3>` + (s.tests.length ? `<ul class="tests">${s.tests.map(t => `<li><span class="kind">${t.kind}</span><span class="tn">${esc(t.name)}</span><span class="rq">${t.r.join(' ')}</span></li>`).join('')}</ul>` : `<div class="mock">No tests: ${s.unexplained ? 'incidental change' : 'documentation'}.</div>`);
+    b += `<h3>Hunks (${s.hunks.length})</h3>` + s.hunks.map(hunkHTML).join('');
+    b += `<h3>Files</h3><div class="chips">${s.files.map(chip).join('')}</div>`;
+    b += `<h3>Built in</h3>${commitList(s.commits)}`;
+  } else if (REQ[id]) {
+    const r = REQ[id], g = goalOf(id);
+    h = `<div class="eyebrow">Requirement ${id} · ${g.id} ${esc(g.title)}</div><h2>${esc(r.t)}</h2>${badge(r.st)}`;
+    if (r.note) b += `<div class="note ${r.st === 'deferred' ? 'def' : r.st === 'partial' ? 'warn' : ''}">${esc(r.note)}</div>${(r.noteCites || []).map(quoteHTML).join('')}`;
+    b += `<h3>Stated in</h3>${r.cites.map(quoteHTML).join('')}`;
+    const impl = SETS.filter(s => s.serves.some(x => x[0] === id));
+    b += `<h3>Implemented by</h3>` + (impl.length ? `<div class="chips">${impl.map(s => chip(s.id)).join('')}</div>` : `<div class="mock">Nothing in this PR.</div>`);
+    const tests = SETS.flatMap(s => s.tests).filter(t => t.r.includes(id));
+    b += `<h3>Proven by (${tests.length})</h3>` + (tests.length ? '' : `<div class="mock">No test names this requirement.</div>`);
+    if (tests.length) b += `<ul class="tests">${tests.map(t => `<li><span class="kind">${t.kind}</span><span class="tn">${esc(t.name)}</span></li>`).join('')}</ul>`;
+  } else if (SRCM[id]) {
+    const s = SRCM[id];
+    h = `<div class="eyebrow">${esc(s.kind)} · ${s.inPR ? 'added in this PR' : 'existed before this PR'}</div><h2>${esc(s.title)}</h2><div class="mock">${esc(s.sub)}</div>`;
+    b += `<p>${esc(s.desc)}</p>`;
+    if (s.url) b += `<p><a href="${s.url}" target="_blank" rel="noopener">Open ${esc(s.title)} ↗</a></p>`;
+    const rs = Object.keys(REQ).filter(r => REQ[r].cites.some(q => q.source === id));
+    b += `<h3>Requirements it states (${rs.length})</h3><div class="chips">${rs.map(chip).join('')}</div>`;
+    const qs = rs.flatMap(r => REQ[r].cites.filter(q => q.source === id).map(q => ({...q, r})));
+    b += `<h3>Quotes</h3>${qs.map(q => `<div class="mock">${q.r}</div>` + quoteHTML(q)).join('')}`;
+  } else if (FILEM[id]) {
+    const f = FILEM[id];
+    h = `<div class="eyebrow">File${f.t ? ' · ' + f.t : ''}</div><h2 class="mono" style="font-size:14px;word-break:break-all">${esc(f.p)}</h2><div><span class="add">+${f.a}</span> <span class="del">−${f.d}</span></div>`;
+    const ss = SETS.filter(s => s.files.includes(id));
+    b += `<h3>Part of</h3><div class="chips">${ss.map(s => chip(s.id)).join('')}</div>`;
+    const fh = Object.values(HUNKM).filter(h => h.file === id);
+    b += `<h3>Hunks (${fh.length})</h3>` + fh.map(h => `<div class="mock">in ${chip(h.set)}</div>` + hunkHTML(h)).join('');
+    const cs = COMMITS.filter(c => c[4].some(x => ss.some(s => s.id === x))).map(c => c[0]);
+    b += `<h3>Commits in those change sets</h3>${commitList(cs)}`;
+  } else if (GOALS.find(g => g.id === id)) {
+    const g = GOALS.find(x => x.id === id);
+    h = `<div class="eyebrow">Goal ${g.id}</div><h2>${esc(g.title)}</h2>`;
+    b += `<p>${esc(g.sum)}</p><h3>Requirements</h3>${g.reqs.map(r => `<div style="margin:6px 0">${chip(r)} ${esc(REQ[r].t)}</div>`).join('')}`;
+    const ss = SETS.filter(s => s.serves.some(x => g.reqs.includes(x[0])));
+    b += `<h3>Change sets</h3><div class="chips">${ss.map(s => chip(s.id)).join('')}</div>`;
+  } else if (COMM[id]) {
+    const c = COMM[id], d = DECISIONS.find(x => x.c === id);
+    h = `<div class="eyebrow">Commit ${id} · ${c[1].slice(0, 16).replace('T', ' ')} · ${esc(c[2])}</div><h2>${esc(c[3])}</h2>`;
+    if (d) b += `<div class="note">${esc(d.t)}. ${esc(d.x)}</div>`;
+    b += `<h3>Change sets</h3><div class="chips">${c[4].map(chip).join('')}</div>`;
+    if (d) b += `<h3>Affects</h3><div class="chips">${d.affects.map(chip).join('')}</div>`;
+  }
+  dh.innerHTML = h; db.innerHTML = b; setDrawer(true);
+  document.querySelectorAll('#drawer [data-go]').forEach(c => c.onclick = () => { showView('map'); select(c.dataset.go); });
+  const tp = $('#tp'), tn = $('#tn'), rv = $('#rv');
+  if (tp) tp.onclick = () => stepTour(-1);
+  if (tn) tn.onclick = () => stepTour(1);
+  if (rv) rv.onchange = () => { rv.checked ? reviewed.add(id) : reviewed.delete(id); nodeEls[id].classList.toggle('reviewed', rv.checked); };
+}
+$('#dx').onclick = () => setDrawer(false);
+$('#selDetails').onclick = () => { if (selected) openDrawer(selected); };
+$('#selClear').onclick = clearSel;
+
+/* ---------- tour ---------- */
+function stepTour(d) { tour = Math.max(0, Math.min(SETS.length - 1, tour + d)); const s = SETS[tour]; highlight([s.id], s.id); openDrawer(s.id); nodeEls[s.id].scrollIntoView({block:'center', behavior:'smooth'}); }
+$('#tourStart').onclick = () => { showView('map'); tour = -1; stepTour(1); };
+
+/* ---------- coverage ---------- */
+(function () {
+  let html = `<tr><th>Req</th><th>Requirement</th><th>Status</th><th>Implemented by</th><th class="num">Tests</th><th>Stated in</th></tr>`;
+  GOALS.forEach(g => {
+    html += `<tr class="gh"><td colspan="6">${g.id} · ${esc(g.title)}</td></tr>`;
+    g.reqs.forEach(rid => {
+      const r = REQ[rid];
+      const impl = SETS.filter(s => s.serves.some(x => x[0] === rid));
+      const nt = SETS.flatMap(s => s.tests).filter(t => t.r.includes(rid)).length;
+      const src = [...new Set(r.cites.map(q => q.source))].map(s => SRCM[s] ? SRCM[s].kind : s).join(', ');
+      html += `<tr class="r" data-go="${rid}"><td class="mono">${rid}</td><td>${esc(r.t)}</td><td>${badge(r.st)}</td><td>${impl.length ? impl.map(s => `<span class="dot" style="--cs:var(${s.c})" title="${esc(s.title)}"></span>`).join('') + ' ' + impl.map(s => s.id).join(', ') : '<span class="miss">none</span>'}</td><td class="num">${nt || '<span class="miss">0</span>'}</td><td>${esc(src)}</td></tr>`;
+    });
+  });
+  $('#covtable').innerHTML = html;
+  document.querySelectorAll('#covtable tr.r').forEach(tr => tr.onclick = () => { showView('map'); select(tr.dataset.go); });
+})();
+
+/* ---------- timeline ---------- */
+(function () {
+  const lanes = SETS, W = 1100, L = 300, R = 20, top = 44, lh = 30, H = top + lanes.length * lh + 30;
+  if (!COMMITS.length) { $('#tl').innerHTML = '<div class="mock">No commits.</div>'; return; }
+  const times = COMMITS.map(c => wall(c[1])), t0 = Math.floor(Math.min(...times) / 864e5) * 864e5, days = Math.max(1, Math.ceil((Math.max(...times) + 1 - t0) / 864e5));
+  const active = new Set(COMMITS.map(c => new Date(wall(c[1])).toISOString().slice(0, 10)));
+  const weights = [...Array(days)].map((_, i) => active.has(new Date(t0 + i * 864e5).toISOString().slice(0, 10)) ? 4 : .6);
+  const tot = weights.reduce((a, b) => a + b, 0), span = W - L - R;
+  const dayX = i => L + span * weights.slice(0, i).reduce((a, b) => a + b, 0) / tot;
+  const byDay = {}; COMMITS.forEach(c => { const i = Math.floor((wall(c[1]) - t0) / 864e5), fr = ((wall(c[1]) - t0) % 864e5) / 864e5; (byDay[i] = byDay[i] || []).push(fr); });
+  const X = iso => { const t = wall(iso), i = Math.floor((t - t0) / 864e5), frac = ((t - t0) % 864e5) / 864e5; const fs = byDay[i] || [frac], lo = Math.min(...fs), hi = Math.max(...fs); const f = hi > lo ? (frac - lo) / (hi - lo) : .5; return dayX(i) + (dayX(i + 1) - dayX(i)) * (.08 + .84 * f); };
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Commits by change set over time">`;
+  for (let i = 0; i < days; i++) {
+    const x = dayX(i), d = new Date(t0 + i * 864e5);
+    s += `<line x1="${x}" x2="${x}" y1="${top - 14}" y2="${H - 20}" stroke="var(--line)"/>`;
+    s += `<text x="${(x + dayX(i + 1)) / 2}" y="${top - 20}" text-anchor="middle" font-size="11.5" fill="${weights[i] > 1 ? 'var(--ink2)' : 'var(--ink3)'}">${weights[i] > 1 ? fmtDay(d.toISOString()) : (days <= 31 ? d.getUTCDate() : '')}</text>`;
+  }
+  lanes.forEach((ln, i) => {
+    const y = top + i * lh + lh / 2;
+    s += `<text x="26" y="${y + 4}" font-size="12" fill="var(--ink)">${esc(ln.title.length > 40 ? ln.title.slice(0, 39) + '…' : ln.title)}</text>`;
+    s += `<circle cx="12" cy="${y}" r="4" fill="var(${ln.c})"/>`;
+    s += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-dasharray="2 4"/>`;
+  });
+  DECISIONS.forEach(d => { const c = COMM[d.c], x = X(c[1]); s += `<line x1="${x}" x2="${x}" y1="${top - 8}" y2="${H - 20}" stroke="var(--div)" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/><path class="tl-dot" data-c="${d.c}" d="M${x} ${top - 16}l6 6l-6 6l-6 -6z" fill="var(--div)"/>`; });
+  COMMITS.forEach(c => {
+    const x = X(c[1]);
+    c[4].forEach(cs => { const i = lanes.findIndex(l => l.id === cs), y = top + i * lh + lh / 2; s += `<circle class="tl-dot" data-c="${c[0]}" cx="${x}" cy="${y}" r="5.5" fill="var(${SETM[cs].c})" stroke="var(--panel)" stroke-width="1.5"/>`; });
+  });
+  s += `</svg>`;
+  $('#tl').innerHTML = s;
+  const tip = $('#tip');
+  document.querySelectorAll('#tl .tl-dot').forEach(d => {
+    d.addEventListener('mousemove', e => { const c = COMM[d.dataset.c], dec = DECISIONS.find(x => x.c === d.dataset.c); tip.innerHTML = `<b>${c[0]}</b> · ${c[1].slice(0, 16).replace('T', ' ')} · ${esc(c[2])}<br>${esc(c[3])}${dec ? '<br><i>Decision: ' + esc(dec.t) + '</i>' : ''}`; tip.style.display = 'block'; tip.style.left = Math.min(e.clientX + 12, innerWidth - 370) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; });
+    d.addEventListener('mouseleave', () => tip.style.display = 'none');
+    d.addEventListener('click', () => { tip.style.display = 'none'; openDrawer(d.dataset.c); });
+  });
+  $('#declist').innerHTML = DECISIONS.map(d => { const c = COMM[d.c]; return `<div class="dec" data-c="${d.c}"><div class="dd">◆ ${c[1].slice(0, 16).replace('T', ' ')} · ${d.c}</div><div class="dt">${esc(d.t)}</div><div class="dx">${esc(d.x)}</div></div>`; }).join('');
+  document.querySelectorAll('.dec').forEach(n => n.onclick = () => openDrawer(n.dataset.c));
+})();
+
+/* ---------- views ---------- */
+function showView(v) {
+  document.querySelectorAll('nav button[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  if (v === 'map') requestAnimationFrame(drawEdges);
+}
+document.querySelectorAll('nav button[data-v]').forEach(b => b.onclick = () => showView(b.dataset.v));
+addEventListener('resize', () => requestAnimationFrame(drawEdges));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawEdges);
+requestAnimationFrame(drawEdges);
+</script>
+</body>
+</html>
