@@ -70,6 +70,8 @@ main{padding:16px 24px 80px}
 .src .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}
 .src .t{font-weight:600;margin-top:1px}
 .src .s{color:var(--ink2);font-size:12px}
+/* long paths and names have no spaces: let them wrap inside the card, preferring breaks after a slash */
+.src .t,.src .s{overflow-wrap:anywhere}
 .tag{display:inline-block;font-size:10.5px;padding:0 6px;border-radius:9px;border:1px solid var(--line2);color:var(--ink2);margin-left:4px;vertical-align:1px}
 .tag.inpr{border-color:var(--accent);color:var(--accent)}
 .goal{border:1px solid var(--line);border-radius:10px;padding:8px;background:transparent}
@@ -278,6 +280,7 @@ const HUNKM = Object.fromEntries(SETS.flatMap(s => s.hunks.map(h => [h.id, Objec
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const pathBreaks = s => esc(s).replace(/([/_.])/g, '$1<wbr>');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const SETM = Object.fromEntries(SETS.map(s => [s.id, s]));
 const FILEM = Object.fromEntries(FILES.map(f => [f.id, f]));
@@ -327,7 +330,7 @@ statDefs.forEach(([k, label]) => {
 /* ---------- map ---------- */
 const nodeEls = {};
 SRC.forEach(s => {
-  const n = el('div', 'node src', `<div class="k">${esc(s.kind)}${s.inPR ? '<span class="tag inpr">in PR</span>' : '<span class="tag">prior</span>'}</div><div class="t">${esc(s.title)}</div><div class="s">${esc(s.sub)}</div>`);
+  const n = el('div', 'node src', `<div class="k">${esc(s.kind)}${s.inPR ? '<span class="tag inpr">in PR</span>' : '<span class="tag">prior</span>'}</div><div class="t">${pathBreaks(s.title)}</div><div class="s">${pathBreaks(s.sub)}</div>`);
   n.dataset.id = s.id; $('#c-src').appendChild(n); nodeEls[s.id] = n;
 });
 GOALS.forEach(g => {
