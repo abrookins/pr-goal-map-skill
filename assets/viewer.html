@@ -50,7 +50,8 @@ nav{display:flex;gap:4px;padding:0 24px;background:var(--panel);border-bottom:1p
 nav button{border:0;background:none;color:var(--ink2);padding:10px 12px;font:inherit;cursor:pointer;border-bottom:2px solid transparent}
 nav button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
 nav .spacer{flex:1}
-nav .hint{color:var(--ink3);font-size:12px}
+nav .hint{color:var(--ink3);font-size:12px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+nav button{white-space:nowrap;flex:none}
 .tourbtn{border:1px solid var(--line2)!important;border-radius:6px;padding:5px 10px!important;margin-left:8px;color:var(--ink)!important}
 main{padding:16px 24px 80px}
 .view{display:none}.view.on{display:block}
@@ -110,10 +111,41 @@ main{padding:16px 24px 80px}
 .sw-dash{border-top-style:dashed}
 
 /* drawer */
-#drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.08);transform:translateX(100%);transition:transform .18s;z-index:20;display:flex;flex-direction:column}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(var(--dw,480px),100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.08);transform:translateX(100%);transition:transform .18s;z-index:20;display:flex;flex-direction:column}
 #drawer.open{transform:none}
 /* keep the map beside an open drawer, not under it, so the Files column stays reachable */
-@media (min-width:900px){body.drawer-open main,body.drawer-open nav{padding-right:calc(24px + min(480px,100vw))}}
+@media (min-width:900px){body.drawer-open main,body.drawer-open nav{padding-right:calc(24px + min(var(--dw,480px),100vw))}}
+/* resizable drawer: drag the left edge; the width is remembered in this browser */
+#dgrip{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:2;touch-action:none;outline:none}
+#dgrip::before{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:transparent;transition:background .12s}
+#dgrip::after{content:"";position:absolute;left:3px;top:50%;width:4px;height:36px;margin-top:-18px;border-radius:2px;background:var(--line2);transition:background .12s}
+#dgrip:hover::before,#dgrip:focus-visible::before,body.resizing #dgrip::before{background:var(--accent)}
+#dgrip:hover::after,#dgrip:focus-visible::after,body.resizing #dgrip::after{background:var(--accent)}
+#dsize{position:absolute;left:14px;top:50%;transform:translateY(-50%);background:var(--ink);color:var(--bg);font-size:11px;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .12s;font-variant-numeric:tabular-nums}
+body.resizing #dsize{opacity:1}
+body.resizing{cursor:col-resize;user-select:none}
+body.resizing #drawer,body.resizing main,body.resizing nav{transition:none}
+#drawer .dtools{position:absolute;right:40px;top:12px;display:flex;gap:4px}
+#drawer .dtools button{border:1px solid var(--line2);background:var(--panel);color:var(--ink2);border-radius:6px;padding:2px 8px;font:inherit;font-size:11.5px;cursor:pointer}
+#drawer .dtools button:hover{color:var(--ink);border-color:var(--accent)}
+
+/* folded gaps: while a trace is active, runs of unrelated cards collapse to one strip */
+.folded{display:none!important}
+.fold{display:flex;align-items:center;gap:8px;width:100%;min-height:26px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;cursor:pointer;font:inherit;font-size:11.5px;color:var(--ink3);text-align:left;
+  background:repeating-linear-gradient(135deg,transparent 0 5px,var(--line) 5px 6px);animation:foldin .2s ease-out}
+.fold .fl{background:var(--bg);padding:0 6px;border-radius:4px;white-space:nowrap;display:inline-flex;gap:5px;align-items:center}
+.fold .fl b{color:var(--ink2);font-weight:600}
+.fold .fx{color:var(--accent);opacity:0;transition:opacity .12s}
+.fold .ticks{display:flex;align-items:flex-end;gap:2px;margin-left:auto;background:var(--bg);padding:2px 4px;border-radius:4px;height:16px;overflow:hidden;max-width:55%}
+.fold .ticks i{display:block;width:3px;height:10px;border-radius:1px;background:var(--line2);flex:none}
+.fold:hover,.fold:focus-visible{border-color:var(--accent);outline:none}
+.fold:hover .fl b,.fold:focus-visible .fl b{color:var(--ink)}
+.fold:hover .fx,.fold:focus-visible .fx{opacity:1}
+.goal .col>.fold{min-height:22px}
+.enter{animation:foldin .2s ease-out}
+@keyframes foldin{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.fold,.enter{animation:none}}
+#selbar button[aria-pressed="true"]{background:var(--accent-t);border-color:var(--accent)}
 #selbar{display:flex;gap:6px;margin-right:12px}
 #selbar[hidden],#selbar button[hidden]{display:none}
 #selbar button{border:1px solid var(--line2);border-radius:6px;padding:4px 10px;color:var(--ink)}
@@ -195,8 +227,8 @@ details.hunk pre.code{max-height:360px}
   <button data-v="tl">Timeline &amp; decisions</button>
   <button class="tourbtn" id="tourStart">Start tour ▸</button>
   <span class="spacer"></span>
-  <span id="selbar" hidden><button id="selDetails" title="Reopen the details panel for the traced card">Details</button><button id="selClear" title="Clear the trace (Esc)">Clear</button></span>
-  <span class="hint">Click any card to trace it · Esc closes details, then clears · J/K in tour</span>
+  <span id="selbar" hidden><button id="selFold" aria-pressed="true" title="Fold unrelated cards (F)">Fold gaps</button><button id="selDetails" title="Reopen the details panel for the traced card">Details</button><button id="selClear" title="Clear the trace (Esc)">Clear</button></span>
+  <span class="hint">Click any card to trace it · F folds gaps · Esc closes details, then clears · J/K in tour</span>
 </nav>
 <main>
   <section class="view on" id="v-map">
@@ -229,7 +261,7 @@ details.hunk pre.code{max-height:360px}
     <div class="decisions" id="declist"></div>
   </section>
 </main>
-<aside id="drawer"><button class="x" id="dx" aria-label="Close">×</button><div class="dh" id="dh"></div><div class="db" id="db"></div></aside>
+<aside id="drawer"><div id="dgrip" role="separator" aria-orientation="vertical" aria-label="Resize details panel" tabindex="0"><span id="dsize"></span></div><div class="dtools"><button id="dwide" title="Toggle a wide panel for reading diffs">Widen</button></div><button class="x" id="dx" aria-label="Close">×</button><div class="dh" id="dh"></div><div class="db" id="db"></div></aside>
 <div class="tip" id="tip"></div>
 
 <script>
@@ -274,7 +306,7 @@ $('#meta').innerHTML = [META.url ? `<a href="${esc(META.url)}" target="_blank" r
 const reqN = Object.keys(REQ).length, provenN = Object.keys(REQ).filter(r => SETS.some(s => s.tests.some(t => t.r.includes(r)))).length;
 $('#summary').innerHTML = META.summary ? esc(META.summary) : `${counts.covered} of ${reqN} requirements covered; ${provenN} named by a test.`;
 (META.notes || []).forEach(n => $('#notes').appendChild(el('div', 'mock', '⚠ ' + esc(n))));
-$('#notes').appendChild(el('div', 'mock', `Generated ${esc(META.generatedAt || '')} by the pr-goal-map skill. Every claim links to a quote, hunk or commit; check the ones that matter before relying on them.`));
+$('#notes').appendChild(el('div', 'mock', `Generated ${esc(META.generatedAt || '')} by the pr-goal-map skill.`));
 const statDefs = [['covered','covered'],['diverged','diverged'],['partial','partial'],['deferred','deferred'],['missing','missing'],['unexplained','unexplained']];
 statDefs.forEach(([k, label]) => {
   const n = k === 'unexplained' ? SETS.filter(s => s.unexplained).length : counts[k];
@@ -319,8 +351,13 @@ function drawEdges() {
   const svg = $('#edges'), map = $('#map'), mr = map.getBoundingClientRect();
   svg.setAttribute('width', map.scrollWidth); svg.setAttribute('height', map.scrollHeight);
   svg.innerHTML = '';
+  const seen = new Set();
   EDGES.forEach(e => {
-    const a = nodeEls[e.f], b = nodeEls[e.t]; if (!a || !b) return;
+    // an edge whose end is folded attaches to that fold strip; strip-to-strip edges are dropped, duplicates merged
+    const a = anchorOf(e.f), b = anchorOf(e.t); if (!a || !b) return;
+    const fa = a.classList.contains('fold'), fb = b.classList.contains('fold');
+    if (fa && fb) return;
+    if (fa || fb) { const key = (a.dataset.id || a.dataset.key) + '>' + (b.dataset.id || b.dataset.key); if (seen.has(key)) return; seen.add(key); }
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
     const x1 = ra.right - mr.left, y1 = ra.top + ra.height / 2 - mr.top, x2 = rb.left - mr.left, y2 = rb.top + rb.height / 2 - mr.top;
     const dx = (x2 - x1) * .5;
@@ -333,10 +370,11 @@ function drawEdges() {
     if (e.k === 'touch') { w = Math.max(1, Math.min(9, Math.sqrt(e.w) / 2.4)); p.style.stroke = `var(${e.cs})`; p.style.strokeOpacity = .45; }
     p.setAttribute('stroke-width', w);
     p.dataset.f = e.f; p.dataset.t = e.t;
+    if (lit && !fa && !fb && lit.has(e.f) && lit.has(e.t)) p.classList.add('lit');
     svg.appendChild(p);
   });
-  applyLit();
 }
+const anchorOf = id => { const f = foldOf.get(id); if (f) return f; const n = nodeEls[id]; return n && n.offsetParent ? n : null; };
 
 /* ---------- selection ---------- */
 let lit = null, selected = null;
@@ -350,15 +388,112 @@ function traceFrom(ids) {
 }
 function applyLit() {
   const map = $('#map');
-  document.querySelectorAll('.node.lit,.goal.lit,.edge.lit,.node.sel').forEach(n => n.classList.remove('lit', 'sel'));
-  if (!lit) { map.classList.remove('dim'); return; }
-  map.classList.add('dim');
-  lit.forEach(id => { const n = nodeEls[id]; if (n) n.classList.add('lit'); });
-  GOALS.forEach(g => { if (lit.has(g.id) || g.reqs.some(r => lit.has(r))) nodeEls[g.id].classList.add('lit'); });
-  document.querySelectorAll('.edge').forEach(p => { if (lit.has(p.dataset.f) && lit.has(p.dataset.t)) p.classList.add('lit'); });
-  if (selected && nodeEls[selected] && nodeEls[selected].classList.contains('node')) nodeEls[selected].classList.add('sel');
+  document.querySelectorAll('.node.lit,.goal.lit,.node.sel').forEach(n => n.classList.remove('lit', 'sel'));
+  map.classList.toggle('dim', !!lit);
+  if (lit) {
+    lit.forEach(id => { const n = nodeEls[id]; if (n) n.classList.add('lit'); });
+    GOALS.forEach(g => { if (lit.has(g.id) || g.reqs.some(r => lit.has(r))) nodeEls[g.id].classList.add('lit'); });
+    if (selected && nodeEls[selected] && nodeEls[selected].classList.contains('node')) nodeEls[selected].classList.add('sel');
+  }
   syncSelBar();
+  layout(true);
 }
+
+/* ---------- folding ---------- */
+// While a trace is active, each run of unrelated cards in a column becomes one strip.
+// Clicking a strip opens that run for the rest of this trace; a new selection folds everything again.
+let foldOn = true;
+const openRuns = new Set();          // run keys the reader opened during this trace
+const foldOf = new Map();            // hidden node id -> strip element
+const KIND = {source: ['source', 'sources'], set: ['change set', 'change sets'], goal: ['goal', 'goals'], req: ['requirement', 'requirements'], file: ['file', 'files']};
+const plural = (n, k) => n + ' ' + KIND[k][n === 1 ? 0 : 1];
+function keeps(e) {
+  if (e.classList.contains('fgroup')) { for (let n = e.nextElementSibling; n && !n.classList.contains('fgroup'); n = n.nextElementSibling) if (n.classList.contains('lit')) return true; return false; }
+  return e.classList.contains('lit');
+}
+function idsIn(e) { if (e.dataset.goal) { const g = GOALS.find(x => x.id === e.dataset.goal); return [g.id, ...g.reqs]; } return e.dataset.id ? [e.dataset.id] : []; }
+function tickFor(e) {
+  const id = e.dataset.id;
+  if (SETM[id]) return `<i style="background:var(${SETM[id].c})"></i>`;
+  if (REQ[id]) { const c = {covered: '--ok', partial: '--warn', deferred: '--def', diverged: '--div', missing: '--bad'}[REQ[id].st]; return `<i style="background:var(${c})"></i>`; }
+  if (FILEM[id]) { const f = FILEM[id]; return `<i style="height:${Math.max(3, Math.round(12 * Math.sqrt((f.a + f.d) / maxLines)))}px"></i>`; }
+  return '<i></i>';
+}
+function nameOf(e) {
+  const id = e.dataset.id;
+  if (e.dataset.goal) { const g = GOALS.find(x => x.id === e.dataset.goal); return g.id + ' ' + g.title; }
+  if (SETM[id]) return SETM[id].title; if (REQ[id]) return id + ' ' + REQ[id].t; if (FILEM[id]) return FILEM[id].p; if (SRCM[id]) return SRCM[id].title;
+  return '';
+}
+function foldRun(col, run, kind) {
+  const cards = run.filter(e => !e.classList.contains('fgroup'));
+  const h = run.reduce((a, e) => a + e.offsetHeight, 0);
+  if (!cards.length || (cards.length < 2 && h < 100)) return;   // a single short card is cheaper to show than to fold
+  const key = kind + ':' + (cards[0].dataset.id || cards[0].dataset.goal);
+  if (openRuns.has(key)) return;
+  let label = plural(cards.length, kind);
+  if (kind === 'goal') label += ' · ' + plural(cards.reduce((a, g) => a + idsIn(g).length - 1, 0), 'req');
+  if (kind === 'file') { const dirs = new Set(cards.map(c => FILEM[c.dataset.id].g)).size; if (dirs > 1) label += ' in ' + dirs + ' folders'; }
+  const tickSrc = kind === 'goal' ? cards.flatMap(g => [...g.querySelectorAll('.req')]) : cards;
+  const b = el('button', 'fold', `<span class="fl"><b>${label}</b><span class="fx">Show</span></span><span class="ticks">${tickSrc.slice(0, 48).map(tickFor).join('')}</span>`);
+  b.dataset.key = key; b.type = 'button';
+  b.setAttribute('aria-label', 'Show ' + label + ' hidden by the trace');
+  const names = (kind === 'goal' ? cards : cards).map(nameOf);
+  b.onmouseenter = ev => { const t = $('#tip'); t.innerHTML = names.slice(0, 10).map(esc).join('<br>') + (names.length > 10 ? `<br><i>and ${names.length - 10} more</i>` : ''); t.style.display = 'block'; const r = b.getBoundingClientRect(); t.style.left = Math.min(r.left, innerWidth - 370) + 'px'; t.style.top = (r.bottom + 6) + 'px'; };
+  b.onmouseleave = () => $('#tip').style.display = 'none';
+  b.onclick = ev => { ev.stopPropagation(); $('#tip').style.display = 'none'; openRuns.add(key); layout(true, b, run[0]); };
+  col.insertBefore(b, run[0]);
+  run.forEach(e => { e.classList.add('folded'); idsIn(e).forEach(id => foldOf.set(id, b)); });
+}
+function foldCol(col, kind) {
+  let run = [];
+  [...col.children].forEach(e => { if (e.classList.contains('fold')) return; if (keeps(e)) { foldRun(col, run, kind); run = []; } else run.push(e); });
+  foldRun(col, run, kind);
+}
+function applyFold() {
+  document.querySelectorAll('#map .fold').forEach(f => f.remove());
+  document.querySelectorAll('#map .folded').forEach(n => n.classList.remove('folded'));
+  foldOf.clear();
+  if (!lit || !foldOn) return;
+  foldCol($('#c-src'), 'source');
+  foldCol($('#c-req'), 'goal');
+  document.querySelectorAll('#c-req .goal.lit > .col').forEach(c => foldCol(c, 'req'));
+  foldCol($('#c-set'), 'set');
+  foldCol($('#c-file'), 'file');
+}
+// Re-fold, keep the reader's place, and slide moved cards (FLIP) so the jump is easy to follow.
+// pin: the element whose screen position should not change (the clicked card, or the strip that was opened).
+function layout(animate, pin, pinAfter) {
+  pin = pin || (selected && nodeEls[selected]);
+  const motion = animate && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const movers = [...document.querySelectorAll('#map .col > .node, #map .col > .goal, #map .col > .fgroup, #map .goal .req')];
+  const before = new Map();
+  if (motion) movers.forEach(n => { if (n.offsetParent) before.set(n, n.getBoundingClientRect().top); });
+  const pinTop = pin && pin.offsetParent ? pin.getBoundingClientRect().top : null;
+  applyFold();
+  const pinNow = pinAfter && pinAfter.offsetParent ? pinAfter : pin;
+  if (pinTop != null && pinNow && pinNow.offsetParent) window.scrollBy(0, pinNow.getBoundingClientRect().top - pinTop);
+  const svg = $('#edges');
+  if (!motion) { drawEdges(); return; }
+  const shift = new Map();
+  movers.forEach(n => {
+    if (!n.offsetParent) return;
+    if (!before.has(n)) { n.classList.remove('enter'); void n.offsetWidth; n.classList.add('enter'); return; }
+    shift.set(n, before.get(n) - n.getBoundingClientRect().top);
+  });
+  shift.forEach((d, n) => {
+    const g = n.classList.contains('req') ? n.closest('.goal') : null;
+    const own = d - (g && shift.has(g) ? shift.get(g) : 0);   // nested cards move with their goal box already
+    if (Math.abs(own) < 1) return;
+    n.style.transition = 'none'; n.style.transform = `translateY(${own}px)`;
+  });
+  svg.style.transition = 'none'; svg.style.opacity = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    shift.forEach((d, n) => { if (n.style.transform) { n.style.transition = 'transform .24s cubic-bezier(.2,.7,.2,1)'; n.style.transform = ''; } });
+    setTimeout(() => { shift.forEach((d, n) => n.style.transition = ''); drawEdges(); svg.style.transition = 'opacity .15s'; svg.style.opacity = 1; }, 250);
+  }));
+}
+function toggleFold() { foldOn = !foldOn; $('#selFold').setAttribute('aria-pressed', foldOn); layout(true); }
 // Closing the drawer keeps the trace; clearing the trace closes the drawer.
 function setDrawer(open) {
   $('#drawer').classList.toggle('open', open);
@@ -367,19 +502,20 @@ function setDrawer(open) {
   requestAnimationFrame(drawEdges);
 }
 function syncSelBar() {
-  $('#selbar').hidden = !selected;
-  $('#selDetails').hidden = $('#drawer').classList.contains('open');
+  $('#selbar').hidden = !lit;
+  $('#selDetails').hidden = !selected || $('#drawer').classList.contains('open');
 }
 function highlight(ids, sel) {
   const start = [];
   ids.forEach(id => { const g = GOALS.find(x => x.id === id); if (g) start.push(...g.reqs); else start.push(id); });
-  lit = traceFrom(start); ids.forEach(i => lit.add(i)); selected = sel; applyLit();
+  lit = traceFrom(start); ids.forEach(i => lit.add(i)); selected = sel; openRuns.clear(); applyLit();
 }
 function select(id) { highlight([id], id); openDrawer(id); }
-function clearSel() { lit = null; selected = null; applyLit(); setDrawer(false); tour = -1; }
+function clearSel() { lit = null; selected = null; openRuns.clear(); applyLit(); setDrawer(false); tour = -1; }
 document.querySelectorAll('#map .node').forEach(n => n.addEventListener('click', e => { e.stopPropagation(); select(n.dataset.id); }));
 $('#map').addEventListener('click', e => { if (e.target.id === 'map' || e.target.closest('.colhead')) clearSel(); });
 document.addEventListener('keydown', e => {
+  if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey && lit && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) toggleFold();
   if (e.key === 'Escape') { if ($('#drawer').classList.contains('open')) setDrawer(false); else clearSel(); }
   if (tour >= 0 && (e.key === 'j' || e.key === 'ArrowDown')) stepTour(1);
   if (tour >= 0 && (e.key === 'k' || e.key === 'ArrowUp')) stepTour(-1);
@@ -465,6 +601,45 @@ function openDrawer(id) {
 $('#dx').onclick = () => setDrawer(false);
 $('#selDetails').onclick = () => { if (selected) openDrawer(selected); };
 $('#selClear').onclick = clearSel;
+$('#selFold').onclick = toggleFold;
+
+/* ---------- resizable drawer ---------- */
+// Drag the drawer's left edge (or focus it and use arrow keys). The width is saved per browser.
+const DW_KEY = 'goalmap.drawerWidth', DW_DEFAULT = 480, DW_MIN = 360;
+const dwMax = () => Math.max(DW_MIN, innerWidth - 360);           // always leave a strip of map visible
+const clampDW = w => Math.round(Math.min(dwMax(), Math.max(DW_MIN, w)));
+let dw = DW_DEFAULT, dwBeforeWide = null;
+try { const v = parseInt(localStorage.getItem(DW_KEY), 10); if (v) dw = v; } catch (e) {}
+function setDW(w, save) {
+  dw = clampDW(w);
+  document.documentElement.style.setProperty('--dw', dw + 'px');
+  $('#dsize').textContent = dw + 'px';
+  $('#dwide').textContent = dw >= Math.min(900, dwMax()) ? 'Narrow' : 'Widen';
+  if (save) try { localStorage.setItem(DW_KEY, String(dw)); } catch (e) {}
+}
+setDW(dw, false);
+let edgeRaf = 0;
+const redrawSoon = () => { if (!edgeRaf) edgeRaf = requestAnimationFrame(() => { edgeRaf = 0; drawEdges(); }); };
+const grip = $('#dgrip');
+grip.addEventListener('pointerdown', e => {
+  e.preventDefault(); grip.setPointerCapture(e.pointerId); document.body.classList.add('resizing');
+  const move = ev => { setDW(innerWidth - ev.clientX, false); redrawSoon(); };
+  const up = () => { grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); document.body.classList.remove('resizing'); setDW(dw, true); dwBeforeWide = null; drawEdges(); };
+  grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up);
+});
+grip.addEventListener('dblclick', () => { setDW(DW_DEFAULT, true); dwBeforeWide = null; drawEdges(); });
+grip.addEventListener('keydown', e => {
+  const step = e.shiftKey ? 80 : 20;
+  if (e.key === 'ArrowLeft') setDW(dw + step, true); else if (e.key === 'ArrowRight') setDW(dw - step, true); else return;
+  e.preventDefault(); redrawSoon();
+});
+$('#dwide').onclick = () => {
+  const wide = Math.min(Math.max(900, Math.round(innerWidth * .62)), dwMax());
+  if (dw >= Math.min(900, dwMax())) setDW(dwBeforeWide || DW_DEFAULT, true), dwBeforeWide = null;
+  else { dwBeforeWide = dw; setDW(wide, true); }
+  setTimeout(drawEdges, 200);
+};
+addEventListener('resize', () => setDW(dw, false));
 
 /* ---------- tour ---------- */
 function stepTour(d) { tour = Math.max(0, Math.min(SETS.length - 1, tour + d)); const s = SETS[tour]; highlight([s.id], s.id); openDrawer(s.id); nodeEls[s.id].scrollIntoView({block:'center', behavior:'smooth'}); }
