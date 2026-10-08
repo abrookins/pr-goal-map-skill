@@ -203,6 +203,13 @@ table.cov{border-collapse:collapse;width:100%;background:var(--panel);border:1px
 .dec .dt{font-weight:650;margin:2px 0}
 .dec .dx{color:var(--ink2);font-size:12px}
 .mock{font-size:11.5px;color:var(--ink3);margin-top:8px}
+details.mapnotes{margin-top:10px;max-width:980px;font-size:12px;color:var(--ink2)}
+details.mapnotes summary{cursor:pointer;color:var(--ink3);width:max-content;list-style:none;display:flex;gap:6px;align-items:center}
+details.mapnotes summary::-webkit-details-marker{display:none}
+details.mapnotes summary::before{content:"▸";font-size:10px;transition:transform .12s}
+details.mapnotes[open] summary::before{transform:rotate(90deg)}
+details.mapnotes summary:hover{color:var(--ink)}
+details.mapnotes ul{margin:6px 0 0;padding:8px 12px 8px 26px;background:var(--bg);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;gap:6px}
 details.hunk{border:1px solid var(--line);border-radius:6px;margin:6px 0;padding:6px 8px;background:var(--panel)}
 details.hunk summary{cursor:pointer;list-style:none;font-size:12px}
 details.hunk summary::-webkit-details-marker{display:none}
@@ -228,7 +235,7 @@ details.hunk pre.code{max-height:360px}
   <button class="tourbtn" id="tourStart">Start tour ▸</button>
   <span class="spacer"></span>
   <span id="selbar" hidden><button id="selFold" aria-pressed="true" title="Fold unrelated cards (F)">Fold gaps</button><button id="selDetails" title="Reopen the details panel for the traced card">Details</button><button id="selClear" title="Clear the trace (Esc)">Clear</button></span>
-  <span class="hint">Click any card to trace it · F folds gaps · Esc closes details, then clears · J/K in tour</span>
+  <span class="hint">Click any card to trace it</span>
 </nav>
 <main>
   <section class="view on" id="v-map">
@@ -239,7 +246,6 @@ details.hunk pre.code{max-height:360px}
       <span><span class="badge b-diverged">diverged</span> built differently, on purpose</span>
       <span><span class="badge b-partial">partial</span></span>
       <span><span class="badge b-deferred">deferred</span> explicitly left for later</span>
-      <span>Link width in the right half follows lines changed</span>
     </div>
     <div id="mapwrap">
       <div id="map">
@@ -305,8 +311,11 @@ $('#meta').innerHTML = [META.url ? `<a href="${esc(META.url)}" target="_blank" r
   `<span>${esc((META.authors || []).join(', '))}</span>`, `<span class="mono">${esc(META.base)}..${esc(META.head)}</span>`].join('');
 const reqN = Object.keys(REQ).length, provenN = Object.keys(REQ).filter(r => SETS.some(s => s.tests.some(t => t.r.includes(r)))).length;
 $('#summary').innerHTML = META.summary ? esc(META.summary) : `${counts.covered} of ${reqN} requirements covered; ${provenN} named by a test.`;
-(META.notes || []).forEach(n => $('#notes').appendChild(el('div', 'mock', '⚠ ' + esc(n))));
-$('#notes').appendChild(el('div', 'mock', `Generated ${esc(META.generatedAt || '')} by the pr-goal-map skill.`));
+// Mapping notes (scope checks, caveats) stay folded away until the reader asks for them.
+if ((META.notes || []).length) {
+  const ns = META.notes;
+  $('#notes').innerHTML = `<details class="mapnotes"><summary>${ns.length} mapping note${ns.length === 1 ? '' : 's'}</summary><ul>${ns.map(n => `<li>${esc(n)}</li>`).join('')}</ul></details>`;
+}
 const statDefs = [['covered','covered'],['diverged','diverged'],['partial','partial'],['deferred','deferred'],['missing','missing'],['unexplained','unexplained']];
 statDefs.forEach(([k, label]) => {
   const n = k === 'unexplained' ? SETS.filter(s => s.unexplained).length : counts[k];
